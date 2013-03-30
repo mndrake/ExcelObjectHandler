@@ -28,7 +28,7 @@ module TestRTD =
   let myArray (p:obj[]) =
       let (n,a) = (unbox p.[0], unbox p.[1])
       System.Threading.Thread.Sleep 2000
-      [| 1 .. n |]
+      [| a .. n+a |]
 
   // creates object asynchronously and returns handle when done
   [<ExcelFunction(Name="MyArray.create")>]
