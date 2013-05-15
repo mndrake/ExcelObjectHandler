@@ -1,53 +1,56 @@
-﻿namespace ExcelObjectHandler
+﻿namespace Example
+open Utility
 open ExcelDna.Integration
-
-module TestRTD =
-
-// class example
- 
+open System.Threading
+  
+module ClassExample =
+    
   // class we want to create an object handle for
-  type Person =
-    val FirstName:string
-    val LastName:string
-    new (firstName,lastName) = {FirstName=firstName; LastName=lastName}
-
+  type Person(firstName:string, lastName:string) =
+    member val FirstName = firstName with get,set
+    member val LastName = lastName with get,set
+ 
+  // function to create object and pass it's handle to excel
   [<ExcelFunction(Name="Person.create")>]
   let createPerson (firstName, lastName) =
     new Person(firstName, lastName)
-    |> XlCache.registerObject "Person"
+    |> XlCache.register "Person"
  
   // function that uses the object handle
   [<ExcelFunction(Name="Person.getFirstName")>]
   let getPersonFirstName personHandle = 
-     let p:Person = XlCache.lookupObject personHandle 
-     p.FirstName
-
-// slow function example
+     let person:Person = XlCache.lookup personHandle
+     person.FirstName
  
-  // slow running function restated to object array input
-  let myArray (p:obj[]) =
-      let (n,a) = (unbox p.[0], unbox p.[1])
-      System.Threading.Thread.Sleep 2000
-      [| a .. n+a |]
+module AsyncRegisterExample =
 
+  // slow function example
+ 
+  // slow running function that returns array
+  let myArray (n,a) = 
+      Thread.Sleep 2000
+      [| 0 .. n |]
+      |> Array.map ((+) a)
+ 
   // creates object asynchronously and returns handle when done
   [<ExcelFunction(Name="MyArray.create")>]
-  let createMyArray (n:int,a:int) =
-    let args:obj[] = [| n; a |]
-    XlCache.asyncRegisterObject(myArray,"MyArray",args)
+  let createMyArray (n,a) =
+    (n,a) |> XlCache.asyncRegister "MyArray" myArray
 
  
   [<ExcelFunction(Name="MyArray.getSum")>]
   let getMyArraySum myArrayHandle =
-     let a:int[] = XlCache.lookupObject myArrayHandle
+     let a:int[] = XlCache.lookup myArrayHandle
      a |> Array.sum
 
-  let mySlowFunction (p:obj[]) =
-    let myString:string = unbox p.[0]
-    System.Threading.Thread.Sleep 2000
-    box myString
+module AsyncRunExample =
 
-  [<ExcelFunction(Name="AsyncMySlowFunction")>]
-  let asyncMySlowFunction (s:obj) =
-    let args:obj[] = [| s |]
-    XlCache.asyncRun(mySlowFunction,"MySlowFunction",args)
+    [<ExcelFunction(Name="MySlowFunction")>]
+    let mySlowFunction(s:obj,waitTime:int) =
+        Thread.Sleep waitTime
+        s
+
+    [<ExcelFunction(Name="AsyncMySlowFunction")>]
+    let asyncMySlowFunction(s:obj,waitTime:int) = 
+        (s,waitTime) 
+        |> XlCache.asyncRun "mySlowFunction" mySlowFunction
