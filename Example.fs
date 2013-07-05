@@ -54,3 +54,15 @@ module AsyncRunExample =
     let asyncMySlowFunction(s:obj,waitTime:int) = 
         (s,waitTime) 
         |> XlCache.asyncRun "mySlowFunction" mySlowFunction
+
+module AsyncRunAndResizeExample =
+
+    [<ExcelFunction(Name="MyBigSlowFunction")>]
+    let myBigSlowFunction(rows,columns,wait:int) =
+        Thread.Sleep wait
+        Array2D.init rows columns (fun i j -> box (i+j))
+
+    [<ExcelFunction(Name="AsyncResizeMyBigSlowFunction")>]
+    let asyncResizeMyBigSlowFunction(rows,columns,wait) =
+        (rows,columns,wait)
+        |> XlCache.asyncRunAndResize "myBigSlowFunction" myBigSlowFunction

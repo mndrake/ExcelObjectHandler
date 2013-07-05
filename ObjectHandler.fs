@@ -66,3 +66,10 @@ module XlCache =
          |result when result = box ExcelError.ExcelErrorNA -> box ExcelError.ExcelErrorGettingData
          |result -> XlCacheUtility.register tag result
                     |> fun name -> XlCall.RTD(XlCacheUtility.RTDServer, null, name)
+
+  let inline asyncRunAndResize tag func args =
+      let (f,p) = Tuple.ConvertToArrayFunc func args
+      ExcelAsyncUtil.Run(tag, p, fun () -> box <| f p)
+      |> function
+         |result when result = box ExcelError.ExcelErrorNA -> array2D [[box ExcelError.ExcelErrorGettingData]]
+         |result -> result :?> obj[,] |> ArrayResizer.Resize 
