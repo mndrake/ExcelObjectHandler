@@ -5,12 +5,11 @@ open ExcelDna.Integration
 open ExcelDna.Integration.Rtd
 
 module Tuple =
-    /// Takes n-tuple function f with input args and returns array function f' and array input p'
-    let inline ConvertToArrayFunc (f:'T -> 'a) (args:'T) =
-        let getTuple p = FSharpValue.MakeTuple(p, typeof<'T>)
-        let p' = FSharpValue.GetTupleFields args
-        let f' = fun p -> f(unbox <| FSharpValue.MakeTuple(p, typeof<'T>))
-        (f',p')
+    /// Takes n-tuple function f with input args and returns array function and array input
+    let inline ConvertToArrayFunc (tupleFunc:'T -> 'U) (tupleArgs:'T) =
+        let arrayArgs = FSharpValue.GetTupleFields tupleArgs
+        let arrayFunc = fun args -> tupleFunc(unbox <| FSharpValue.MakeTuple(args, typeof<'T>))
+        (arrayFunc,arrayArgs)
 
 module XlCacheUtility =
   [<Literal>]
